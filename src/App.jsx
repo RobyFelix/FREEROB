@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const VERSION = "0.1";
+const VERSION = "0.1a";
 
 // Icone SVG line-art minimali (tratti bianchi semplici)
 const IconZanzara = () => (

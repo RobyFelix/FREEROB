@@ -4,7 +4,7 @@
 
 const BASE = "https://www.myfreezanz.it/new";
 const LOGIN_PAGE = `${BASE}/login/`;
-const LOGIN_URL = `${BASE}/login/include/dataLogin.php`;
+const LOGIN_URL = `${BASE}/login/usercheck.php`;
 const DATA_URL = `${BASE}/cliente/include/dataCliente.php`;
 
 const HEADERS_BASE = {
@@ -66,7 +66,11 @@ export default async function handler(req, res) {
     parseCookies(r1, jar);
 
     // 2. Login
-    const loginBody = new URLSearchParams({ ajax: "1", user, pass });
+    const loginBody = new URLSearchParams({
+      ajax: "1",
+      username: user,
+      password: pass,
+    });
     const r2 = await fetch(LOGIN_URL, {
       method: "POST",
       headers: {
