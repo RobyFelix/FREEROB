@@ -1,66 +1,43 @@
 import { useState } from "react";
 
-const VERSION = "0.1a";
+const VERSION = "0.2";
 
-// Icone SVG line-art minimali (tratti bianchi semplici)
-const IconZanzara = () => (
-  <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" width="42" height="42">
-    <ellipse cx="24" cy="27" rx="5" ry="10" />
-    <circle cx="24" cy="13" r="3.5" />
-    <line x1="24" y1="16.5" x2="24" y2="17.5" />
-    <line x1="19" y1="22" x2="8" y2="14" />
-    <line x1="29" y1="22" x2="40" y2="14" />
-    <line x1="19.5" y1="28" x2="7" y2="28" />
-    <line x1="28.5" y1="28" x2="41" y2="28" />
-    <line x1="20" y1="33" x2="10" y2="41" />
-    <line x1="28" y1="33" x2="38" y2="41" />
+// Icona nebulizzazione line-art
+const IconMist = () => (
+  <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" width="64" height="64">
+    <line x1="24" y1="40" x2="24" y2="30" />
+    <line x1="16" y1="40" x2="32" y2="40" />
+    <line x1="24" y1="26" x2="24" y2="14" />
+    <line x1="17" y1="27" x2="11" y2="17" />
+    <line x1="31" y1="27" x2="37" y2="17" />
+    <circle cx="24" cy="9" r="1.6" fill="currentColor" />
+    <circle cx="8.5" cy="13" r="1.6" fill="currentColor" />
+    <circle cx="39.5" cy="13" r="1.6" fill="currentColor" />
+    <circle cx="15" cy="8" r="1.6" fill="currentColor" />
+    <circle cx="33" cy="8" r="1.6" fill="currentColor" />
   </svg>
 );
-
-const IconMosca = () => (
-  <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" width="42" height="42">
-    <ellipse cx="24" cy="30" rx="7" ry="9" />
-    <circle cx="24" cy="15" r="4.5" />
-    <ellipse cx="13" cy="24" rx="7" ry="4" transform="rotate(-30 13 24)" />
-    <ellipse cx="35" cy="24" rx="7" ry="4" transform="rotate(30 35 24)" />
-  </svg>
-);
-
-const IconProfumo = () => (
-  <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" width="42" height="42">
-    <path d="M24 40c-6 0-9-4-9-8 0-5 5-8 9-14 4 6 9 9 9 14 0 4-3 8-9 8z" />
-    <line x1="24" y1="6" x2="24" y2="12" />
-    <line x1="17" y1="9" x2="19.5" y2="13.5" />
-    <line x1="31" y1="9" x2="28.5" y2="13.5" />
-  </svg>
-);
-
-const BUTTONS = [
-  { id: "zanzare", label: "Repellente Zanzare", color: "#2E7D5B", Icon: IconZanzara },
-  { id: "mosche", label: "Repellente Mosche", color: "#0277BD", Icon: IconMosca },
-  { id: "profumo", label: "Profumo Menta", color: "#6A4FA3", Icon: IconProfumo },
-];
 
 export default function App() {
-  const [busy, setBusy] = useState(null); // id azione in corso
+  const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState(null); // { ok, msg }
 
-  const send = async (id, label) => {
+  const send = async () => {
     if (busy) return;
-    setBusy(id);
+    setBusy(true);
     setToast(null);
     try {
-      const r = await fetch(`/api/freezanz?action=${id}`);
+      const r = await fetch("/api/freezanz?action=mist");
       const data = await r.json();
       if (data.success) {
-        setToast({ ok: true, msg: `${label}: ciclo avviato` });
+        setToast({ ok: true, msg: "Ciclo avviato" });
       } else {
         setToast({ ok: false, msg: data.error || `Errore (HTTP ${data.http || r.status})` });
       }
     } catch {
       setToast({ ok: false, msg: "Errore di rete" });
     } finally {
-      setBusy(null);
+      setBusy(false);
       setTimeout(() => setToast(null), 5000);
     }
   };
@@ -73,23 +50,14 @@ export default function App() {
       </header>
 
       <main style={styles.main}>
-        {BUTTONS.map(({ id, label, color, Icon }) => (
-          <button
-            key={id}
-            onClick={() => send(id, label)}
-            disabled={busy !== null}
-            style={{
-              ...styles.btn,
-              background: color,
-              opacity: busy && busy !== id ? 0.45 : 1,
-            }}
-          >
-            <Icon />
-            <span style={styles.btnLabel}>
-              {busy === id ? "Invio..." : label}
-            </span>
-          </button>
-        ))}
+        <button
+          onClick={send}
+          disabled={busy}
+          style={{ ...styles.btn, opacity: busy ? 0.6 : 1 }}
+        >
+          <IconMist />
+          <span style={styles.btnLabel}>{busy ? "Invio..." : "FREEZANZ"}</span>
+        </button>
       </main>
 
       {toast && (
@@ -122,46 +90,36 @@ const styles = {
     alignItems: "center",
     padding: "28px 16px 8px",
   },
-  title: {
-    margin: 0,
-    fontSize: 34,
-    fontWeight: 700,
-    letterSpacing: 1,
-  },
-  version: {
-    fontSize: 13,
-    opacity: 0.55,
-    marginTop: 4,
-  },
+  title: { margin: 0, fontSize: 34, fontWeight: 700, letterSpacing: 1 },
+  version: { fontSize: 13, opacity: 0.55, marginTop: 4 },
   main: {
     flex: 1,
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
-    gap: 22,
-    padding: "16px 22px 40px",
-    maxWidth: 460,
-    width: "100%",
-    margin: "0 auto",
-    boxSizing: "border-box",
+    alignItems: "center",
+    padding: "16px 22px 60px",
   },
   btn: {
     display: "flex",
+    flexDirection: "column",
     alignItems: "center",
-    gap: 18,
+    gap: 16,
     border: "none",
-    borderRadius: 20,
-    padding: "26px 24px",
+    borderRadius: "50%",
+    width: 240,
+    height: 240,
+    justifyContent: "center",
+    background: "#0277BD",
     color: "white",
-    fontSize: 20,
-    fontWeight: 600,
+    fontSize: 24,
+    fontWeight: 700,
+    letterSpacing: 2,
     cursor: "pointer",
-    boxShadow: "0 4px 14px rgba(0,0,0,0.45)",
+    boxShadow: "0 6px 24px rgba(2,119,189,0.45)",
     transition: "opacity 0.2s",
   },
-  btnLabel: {
-    textAlign: "left",
-  },
+  btnLabel: {},
   toast: {
     position: "fixed",
     left: "50%",
