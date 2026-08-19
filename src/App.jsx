@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const VERSION = "0.4";
+const VERSION = "0.5";
 
 // Icona nebulizzazione line-art
 const IconMist = () => (
@@ -20,31 +20,22 @@ const IconMist = () => (
 
 export default function App() {
   const [busy, setBusy] = useState(false);
-  const [toast, setToast] = useState(null); // { ok, msg }
+  const [esito, setEsito] = useState(null); // null | "ok" | "ko"
 
   const send = async () => {
     if (busy) return;
     setBusy(true);
-    setToast(null);
+    setEsito(null);
     try {
       const r = await fetch("/api/freezanz?action=mist");
       const data = await r.json();
-      if (data.success) {
-        const acc = String(data.response).trim() === "1";
-        setToast({
-          ok: acc,
-          msg: acc
-            ? "Comando accettato — la macchina partirà a breve"
-            : `Risposta inattesa: ${String(data.response).slice(0, 60)}`,
-        });
-      } else {
-        setToast({ ok: false, msg: data.error || `Errore (HTTP ${data.http || r.status})` });
-      }
+      const acc = data.success && String(data.response).trim() === "1";
+      setEsito(acc ? "ok" : "ko");
     } catch {
-      setToast({ ok: false, msg: "Errore di rete" });
+      setEsito("ko");
     } finally {
       setBusy(false);
-      setTimeout(() => setToast(null), 5000);
+      setTimeout(() => setEsito(null), 6000);
     }
   };
 
@@ -54,7 +45,17 @@ export default function App() {
         <button
           onClick={send}
           disabled={busy}
-          style={{ ...styles.btn, opacity: busy ? 0.6 : 1 }}
+          style={{
+            ...styles.btn,
+            opacity: busy ? 0.6 : 1,
+            boxShadow:
+              esito === "ok"
+                ? "0 0 0 10px #2E7D32, 0 6px 24px rgba(2,119,189,0.45)"
+                : esito === "ko"
+                ? "0 0 0 10px #C62828, 0 6px 24px rgba(2,119,189,0.45)"
+                : "0 6px 24px rgba(2,119,189,0.45)",
+            transition: "box-shadow 0.3s, opacity 0.2s",
+          }}
         >
           <IconMist />
           <span style={styles.btnLabel}>{busy ? "Invio..." : "FREEZANZ"}</span>
@@ -63,16 +64,6 @@ export default function App() {
         </button>
       </main>
 
-      {toast && (
-        <div
-          style={{
-            ...styles.toast,
-            background: toast.ok ? "#1B5E20" : "#7B1F1F",
-          }}
-        >
-          {toast.msg}
-        </div>
-      )}
     </div>
   );
 }
@@ -111,23 +102,8 @@ const styles = {
     fontWeight: 700,
     letterSpacing: 2,
     cursor: "pointer",
-    boxShadow: "0 6px 24px rgba(2,119,189,0.45)",
-    transition: "opacity 0.2s",
   },
   btnLabel: {},
   btnSub: { fontSize: 17, fontWeight: 600, letterSpacing: 3, opacity: 0.9 },
   btnVer: { fontSize: 11, fontWeight: 400, letterSpacing: 1, opacity: 0.6 },
-  toast: {
-    position: "fixed",
-    left: "50%",
-    bottom: 28,
-    transform: "translateX(-50%)",
-    padding: "13px 22px",
-    borderRadius: 12,
-    fontSize: 15,
-    fontWeight: 500,
-    boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
-    maxWidth: "88vw",
-    textAlign: "center",
-  },
 };
