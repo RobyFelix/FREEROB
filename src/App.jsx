@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const VERSION = "0.2b";
+const VERSION = "0.3";
 
 // Icona nebulizzazione line-art
 const IconMist = () => (
@@ -30,7 +30,13 @@ export default function App() {
       const r = await fetch("/api/freezanz?action=mist");
       const data = await r.json();
       if (data.success) {
-        setToast({ ok: true, msg: `Comando inviato — risposta server: ${String(data.response).slice(0, 60)}` });
+        const acc = String(data.response).trim() === "1";
+        setToast({
+          ok: acc,
+          msg: acc
+            ? "Comando accettato — la macchina partirà a breve"
+            : `Risposta inattesa: ${String(data.response).slice(0, 60)}`,
+        });
       } else {
         setToast({ ok: false, msg: data.error || `Errore (HTTP ${data.http || r.status})` });
       }

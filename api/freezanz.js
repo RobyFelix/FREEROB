@@ -17,13 +17,13 @@ const HEADERS_BASE = {
 
 // op=8 = ciclo manuale per zona
 const ACTIONS = {
-  mist: { op: "1" }, // COMANDO: esegue ciclo manuale (prodotto configurato dal fornitore)
-  // Le op=8 sono risultate di sola lettura (interrogazione cicli per zona):
-  zanzare: { op: "8", numeroZone: "2" },
-  mosche: { op: "8", numeroZone: "3" },
-  profumo: { op: "8", numeroZone: "4" },
-  stop: { op: "2" }, // lettura stato macchina
-  status: { op: "3" },
+  // Mappa verificata dal sorgente cliente.js di myfreezanz.it:
+  mist: { op: "2" }, // COMANDO: esegui MIST (ciclo manuale, prodotto configurato)
+  stop: { op: "4" }, // COMANDO: esegui STOP
+  collegamento: { op: "1" }, // lettura stato collegamento/macchina
+  checkmist: { op: "3" }, // lettura esito invio mist (polling)
+  checkstop: { op: "5" }, // lettura esito invio stop (polling)
+  cicli: { op: "8", numeroZone: "3" }, // lettura tabella cicli zona
 };
 
 function parseCookies(res, jar) {
