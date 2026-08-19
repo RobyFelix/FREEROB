@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const VERSION = "0.2";
+const VERSION = "0.2a";
 
 // Icona nebulizzazione line-art
 const IconMist = () => (

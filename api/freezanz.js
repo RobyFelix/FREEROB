@@ -17,10 +17,12 @@ const HEADERS_BASE = {
 
 // op=8 = ciclo manuale per zona
 const ACTIONS = {
-  zanzare: { op: "8", numeroZone: "2" }, // Repellente zanzare (Prodotto 2)
-  mosche: { op: "8", numeroZone: "3" }, // Repellente mosche  (Prodotto 3)
-  profumo: { op: "8", numeroZone: "4" }, // Profumazione Menta (Prodotto 4)
-  stop: { op: "2" }, // riserva: non esposto in UI 0.1
+  mist: { op: "1" }, // COMANDO: esegue ciclo manuale (prodotto configurato dal fornitore)
+  // Le op=8 sono risultate di sola lettura (interrogazione cicli per zona):
+  zanzare: { op: "8", numeroZone: "2" },
+  mosche: { op: "8", numeroZone: "3" },
+  profumo: { op: "8", numeroZone: "4" },
+  stop: { op: "2" }, // lettura stato macchina
   status: { op: "3" },
 };
 
