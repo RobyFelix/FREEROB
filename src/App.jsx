@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const VERSION = "0.3";
+const VERSION = "0.4";
 
 // Icona nebulizzazione line-art
 const IconMist = () => (
@@ -50,11 +50,6 @@ export default function App() {
 
   return (
     <div style={styles.page}>
-      <header style={styles.header}>
-        <h1 style={styles.title}>FreeROB</h1>
-        <div style={styles.version}>v{VERSION}</div>
-      </header>
-
       <main style={styles.main}>
         <button
           onClick={send}
@@ -63,6 +58,8 @@ export default function App() {
         >
           <IconMist />
           <span style={styles.btnLabel}>{busy ? "Invio..." : "FREEZANZ"}</span>
+          <span style={styles.btnSub}>PROFUMO</span>
+          <span style={styles.btnVer}>v{VERSION}</span>
         </button>
       </main>
 
@@ -90,27 +87,19 @@ const styles = {
     fontFamily:
       "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   },
-  header: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    padding: "28px 16px 8px",
-  },
-  title: { margin: 0, fontSize: 34, fontWeight: 700, letterSpacing: 1 },
-  version: { fontSize: 13, opacity: 0.55, marginTop: 4 },
   main: {
     flex: 1,
     display: "flex",
     flexDirection: "column",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     alignItems: "center",
-    padding: "16px 22px 60px",
+    padding: "40px 22px 60px",
   },
   btn: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: 16,
+    gap: 6,
     border: "none",
     borderRadius: "50%",
     width: 240,
@@ -126,6 +115,8 @@ const styles = {
     transition: "opacity 0.2s",
   },
   btnLabel: {},
+  btnSub: { fontSize: 17, fontWeight: 600, letterSpacing: 3, opacity: 0.9 },
+  btnVer: { fontSize: 11, fontWeight: 400, letterSpacing: 1, opacity: 0.6 },
   toast: {
     position: "fixed",
     left: "50%",
