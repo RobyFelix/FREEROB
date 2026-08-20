@@ -1,58 +1,21 @@
 import { useState, useEffect, useCallback } from "react";
 
-const VERSION = "0.7";
+const VERSION = "2.0";
 
-// Icona nebulizzazione line-art (tasto singolo)
-const IconMist = () => (
-  <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" width="64" height="64">
-    <line x1="24" y1="40" x2="24" y2="30" />
-    <line x1="16" y1="40" x2="32" y2="40" />
-    <line x1="24" y1="26" x2="24" y2="14" />
-    <line x1="17" y1="27" x2="11" y2="17" />
-    <line x1="31" y1="27" x2="37" y2="17" />
-    <circle cx="24" cy="9" r="1.6" fill="currentColor" />
-    <circle cx="8.5" cy="13" r="1.6" fill="currentColor" />
-    <circle cx="39.5" cy="13" r="1.6" fill="currentColor" />
-    <circle cx="15" cy="8" r="1.6" fill="currentColor" />
-    <circle cx="33" cy="8" r="1.6" fill="currentColor" />
-  </svg>
-);
-
-// Icona sequenza: ugello centrale + 12 punti a quadrante (uno per myst)
-const IconSeq = () => {
-  const dots = [];
-  for (let k = 0; k < 12; k++) {
-    const a = (k * 30 * Math.PI) / 180;
-    dots.push(
-      <circle key={k} cx={24 + 17 * Math.sin(a)} cy={24 - 17 * Math.cos(a)} r="1.7" fill="currentColor" stroke="none" />
-    );
-  }
-  return (
-    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" width="46" height="46">
-      {dots}
-      <line x1="24" y1="31" x2="24" y2="24" />
-      <line x1="21" y1="30" x2="27" y2="30" />
-      <line x1="24" y1="21" x2="24" y2="17" />
-      <line x1="20" y1="22" x2="18" y2="18.5" />
-      <line x1="28" y1="22" x2="30" y2="18.5" />
-    </svg>
-  );
-};
-
-// Icona stop sequenza: quadrato di stop nel quadrante
-const IconSeqStop = () => (
-  <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" width="46" height="46">
-    <circle cx="24" cy="24" r="17" />
-    <rect x="17.5" y="17.5" width="13" height="13" rx="2" fill="currentColor" stroke="none" />
-  </svg>
-);
+// Preset sequenze: etichetta, sottotitolo, numero myst, intervallo (s)
+const PRESETS = [
+  { id: "p1", title: "60 MIN", sub: "5 min/myst", total: 12, step: 300 },
+  { id: "p2", title: "60 MIN", sub: "10 min/myst", total: 6, step: 600 },
+  { id: "p3", title: "30 MIN", sub: "5 min/myst", total: 6, step: 300 },
+  { id: "p4", title: "30 MIN", sub: "10 min/myst", total: 3, step: 600 },
+];
 
 export default function App() {
-  const [busy, setBusy] = useState(false);
-  const [esito, setEsito] = useState(null); // anello tasto singolo
+  const [busy, setBusy] = useState(false); // myst singolo
+  const [esito, setEsito] = useState(null);
   const [seq, setSeq] = useState({ active: false, sent: 0, total: 12 });
-  const [seqBusy, setSeqBusy] = useState(false);
-  const [seqEsito, setSeqEsito] = useState(null); // anello tasto sequenza
+  const [seqBusy, setSeqBusy] = useState(null); // id preset in invio, o "stop"
+  const [seqEsito, setSeqEsito] = useState(null); // { id, ok } per anello sul tasto giusto
 
   const refreshSeq = useCallback(async () => {
     try {
@@ -60,7 +23,7 @@ export default function App() {
       const data = await r.json();
       if (data.success) setSeq({ active: data.active, sent: data.sent, total: data.total });
     } catch {
-      /* offline: lascio lo stato attuale */
+      /* offline: mantengo lo stato attuale */
     }
   }, []);
 
@@ -79,8 +42,7 @@ export default function App() {
     try {
       const r = await fetch("/api/freezanz?action=mist");
       const data = await r.json();
-      const acc = data.success && String(data.response).trim() === "1";
-      setEsito(acc ? "ok" : "ko");
+      setEsito(data.success && String(data.response).trim() === "1" ? "ok" : "ko");
     } catch {
       setEsito("ko");
     } finally {
@@ -89,86 +51,118 @@ export default function App() {
     }
   };
 
-  const toggleSeq = async () => {
-    if (seqBusy) return;
-    setSeqBusy(true);
+  const startSeq = async (p) => {
+    if (seqBusy || seq.active) return;
+    setSeqBusy(p.id);
     setSeqEsito(null);
-    const action = seq.active ? "stop" : "start";
     try {
-      const r = await fetch(`/api/sequence?action=${action}`);
+      const r = await fetch(`/api/sequence?action=start&total=${p.total}&step=${p.step}`);
       const data = await r.json();
       if (data.success) {
         setSeq({ active: data.active, sent: data.sent, total: data.total });
-        setSeqEsito("ok");
+        setSeqEsito({ id: p.id, ok: true });
       } else {
-        setSeqEsito("ko");
+        setSeqEsito({ id: p.id, ok: false });
       }
     } catch {
-      setSeqEsito("ko");
+      setSeqEsito({ id: p.id, ok: false });
     } finally {
-      setSeqBusy(false);
+      setSeqBusy(null);
       setTimeout(() => setSeqEsito(null), 6000);
     }
   };
 
-  const ring = (state, base) =>
-    state === "ok"
-      ? `0 0 0 10px #2E7D32, ${base}`
-      : state === "ko"
-      ? `0 0 0 10px #C62828, ${base}`
+  const stopSeq = async () => {
+    if (seqBusy) return;
+    setSeqBusy("stop");
+    setSeqEsito(null);
+    try {
+      const r = await fetch("/api/sequence?action=stop");
+      const data = await r.json();
+      if (data.success) {
+        setSeq({ active: data.active, sent: data.sent, total: data.total });
+        setSeqEsito({ id: "stop", ok: true });
+      } else {
+        setSeqEsito({ id: "stop", ok: false });
+      }
+    } catch {
+      setSeqEsito({ id: "stop", ok: false });
+    } finally {
+      setSeqBusy(null);
+      setTimeout(() => setSeqEsito(null), 6000);
+    }
+  };
+
+  const ring = (id, base) =>
+    seqEsito && seqEsito.id === id
+      ? `0 0 0 8px ${seqEsito.ok ? "#2E7D32" : "#C62828"}, ${base}`
       : base;
 
   return (
     <div style={styles.page}>
+      <header style={styles.header}>
+        <h1 style={styles.title}>Profumatore FreeZanz</h1>
+        <div style={styles.version}>v{VERSION}</div>
+      </header>
+
       <main style={styles.main}>
+        {!seq.active ? (
+          <div style={styles.grid}>
+            {PRESETS.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => startSeq(p)}
+                disabled={seqBusy !== null}
+                style={{
+                  ...styles.rect,
+                  opacity: seqBusy && seqBusy !== p.id ? 0.5 : 1,
+                  boxShadow: ring(p.id, "0 4px 18px rgba(2,119,189,0.4)"),
+                  transition: "box-shadow 0.3s, opacity 0.2s",
+                }}
+              >
+                <span style={styles.rectTitle}>
+                  {seqBusy === p.id ? "Invio..." : p.title}
+                </span>
+                <span style={styles.rectSub}>{p.sub}</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <button
+            onClick={stopSeq}
+            disabled={seqBusy !== null}
+            style={{
+              ...styles.stopBtn,
+              opacity: seqBusy ? 0.6 : 1,
+              boxShadow: ring("stop", "0 4px 18px rgba(179,38,30,0.45)"),
+              transition: "box-shadow 0.3s, opacity 0.2s",
+            }}
+          >
+            <span style={styles.rectTitle}>
+              {seqBusy === "stop" ? "Invio..." : "Ferma myst multipli"}
+            </span>
+            <span style={styles.rectSub}>
+              inviati {seq.sent}/{seq.total} — restano {Math.max(seq.total - seq.sent, 0)} myst
+            </span>
+          </button>
+        )}
+
         <button
           onClick={sendSingle}
           disabled={busy}
           style={{
-            ...styles.btn,
+            ...styles.round,
             opacity: busy ? 0.6 : 1,
-            boxShadow: ring(esito, "0 6px 24px rgba(2,119,189,0.45)"),
+            boxShadow:
+              esito === "ok"
+                ? "0 0 0 8px #2E7D32, 0 5px 20px rgba(2,119,189,0.4)"
+                : esito === "ko"
+                ? "0 0 0 8px #C62828, 0 5px 20px rgba(2,119,189,0.4)"
+                : "0 5px 20px rgba(2,119,189,0.4)",
             transition: "box-shadow 0.3s, opacity 0.2s",
           }}
         >
-          <IconMist />
-          <span style={styles.btnLabel}>{busy ? "Invio..." : "FREEZANZ"}</span>
-          <span style={styles.btnSub}>PROFUMO</span>
-          <span style={styles.btnVer}>v{VERSION}</span>
-        </button>
-
-        <button
-          onClick={toggleSeq}
-          disabled={seqBusy}
-          style={{
-            ...styles.rect,
-            background: seq.active ? "#B3261E" : "#0277BD",
-            opacity: seqBusy ? 0.6 : 1,
-            boxShadow: ring(
-              seqEsito,
-              seq.active
-                ? "0 4px 18px rgba(179,38,30,0.45)"
-                : "0 4px 18px rgba(2,119,189,0.45)"
-            ),
-            transition: "box-shadow 0.3s, background 0.3s, opacity 0.2s",
-          }}
-        >
-          {seq.active ? <IconSeqStop /> : <IconSeq />}
-          <span style={styles.rectText}>
-            <span style={styles.rectTitle}>FREEZANZ</span>
-            <span style={styles.rectSub}>
-              {seqBusy
-                ? "Invio..."
-                : seq.active
-                ? "Ferma myst multipli"
-                : "1 h profumo - 12 myst"}
-            </span>
-            {seq.active && (
-              <span style={styles.rectProg}>
-                inviati {seq.sent}/{seq.total} — restano {Math.max(seq.total - seq.sent, 0)} myst
-              </span>
-            )}
-          </span>
+          {busy ? "Invio..." : "MYST"}
         </button>
       </main>
     </div>
@@ -184,48 +178,70 @@ const styles = {
     flexDirection: "column",
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   },
+  header: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    padding: "26px 16px 6px",
+  },
+  title: { margin: 0, fontSize: 26, fontWeight: 700, letterSpacing: 0.5, textAlign: "center" },
+  version: { fontSize: 12, opacity: 0.55, marginTop: 4 },
   main: {
     flex: 1,
     display: "flex",
     flexDirection: "column",
-    justifyContent: "flex-start",
     alignItems: "center",
-    gap: 44,
-    padding: "40px 22px 60px",
+    gap: 34,
+    padding: "26px 22px 50px",
+    maxWidth: 460,
+    width: "100%",
+    margin: "0 auto",
+    boxSizing: "border-box",
   },
-  btn: {
+  grid: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 18,
+    width: "100%",
+  },
+  rect: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: 6,
+    gap: 3,
     border: "none",
-    borderRadius: "50%",
-    width: 240,
-    height: 240,
-    justifyContent: "center",
+    borderRadius: 18,
+    padding: "18px 20px",
+    width: "100%",
     background: "#0277BD",
     color: "white",
-    fontSize: 24,
+    cursor: "pointer",
+  },
+  stopBtn: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 4,
+    border: "none",
+    borderRadius: 18,
+    padding: "24px 20px",
+    width: "100%",
+    background: "#B3261E",
+    color: "white",
+    cursor: "pointer",
+  },
+  rectTitle: { fontSize: 20, fontWeight: 700, letterSpacing: 1.5 },
+  rectSub: { fontSize: 13, fontWeight: 500, opacity: 0.9 },
+  round: {
+    border: "none",
+    borderRadius: "50%",
+    width: 130,
+    height: 130,
+    background: "#0277BD",
+    color: "white",
+    fontSize: 19,
     fontWeight: 700,
     letterSpacing: 2,
     cursor: "pointer",
   },
-  btnLabel: {},
-  btnSub: { fontSize: 17, fontWeight: 600, letterSpacing: 3, opacity: 0.9 },
-  btnVer: { fontSize: 11, fontWeight: 400, letterSpacing: 1, opacity: 0.6 },
-  rect: {
-    display: "flex",
-    alignItems: "center",
-    gap: 16,
-    border: "none",
-    borderRadius: 22,
-    padding: "20px 26px",
-    minWidth: 260,
-    color: "white",
-    cursor: "pointer",
-  },
-  rectText: { display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3 },
-  rectTitle: { fontSize: 19, fontWeight: 700, letterSpacing: 2 },
-  rectSub: { fontSize: 14, fontWeight: 500, opacity: 0.92 },
-  rectProg: { fontSize: 12, fontWeight: 400, opacity: 0.75 },
 };
