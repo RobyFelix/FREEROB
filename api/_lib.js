@@ -58,6 +58,26 @@ export async function qstashPublish(destUrl, delaySeconds) {
   return data.messageId || (Array.isArray(data) ? data[0]?.messageId : null);
 }
 
+export async function qstashBatch(entries) {
+  // entries = [{ destUrl, delaySeconds }]
+  const body = entries.map((e) => ({
+    destination: e.destUrl,
+    headers: { "Upstash-Delay": `${e.delaySeconds}s` },
+    body: "{}",
+  }));
+  const r = await fetch(`${QURL}/v2/batch`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${QTOK}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(`QStash batch: ${JSON.stringify(data).slice(0, 150)}`);
+  return (Array.isArray(data) ? data : []).map((d) => d.messageId).filter(Boolean);
+}
+
 export async function qstashCancel(messageId) {
   try {
     await fetch(`${QURL}/v2/messages/${messageId}`, {

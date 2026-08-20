@@ -2,8 +2,10 @@
 // action=start | stop | status
 
 import {
-  envOk, getState, setState, qstashPublish, qstashCancel, baseUrl, fireMist,
+  envOk, getState, setState, qstashBatch, qstashCancel, baseUrl, fireMist,
 } from "./_lib.js";
+
+export const config = { maxDuration: 30 };
 
 const TOTAL = 12;
 const STEP_SECONDS = 300; // 5 minuti
@@ -34,21 +36,29 @@ export default async function handler(req, res) {
       if (!ok) {
         return res.status(502).json({ success: false, error: "Primo myst rifiutato da FreZanz" });
       }
-      // Programmo i myst 2..12 (delay 5,10,...,55 minuti)
-      const dest = `${baseUrl(req)}/api/step`;
-      const messageIds = [];
-      for (let n = 2; n <= TOTAL; n++) {
-        const id = await qstashPublish(`${dest}?n=${n}`, (n - 1) * STEP_SECONDS);
-        if (id) messageIds.push(id);
-      }
+      // Stato attivo salvato SUBITO (robustezza in caso di errori successivi)
       const newState = {
         active: true,
         sent: 1,
         total: TOTAL,
         startedAt: new Date().toISOString(),
-        messageIds,
+        messageIds: [],
       };
       await setState(newState);
+      // Programmo i myst 2..12 in un'unica chiamata batch (delay 5,10,...,55 min)
+      const dest = `${baseUrl(req)}/api/step`;
+      const entries = [];
+      for (let n = 2; n <= TOTAL; n++) {
+        entries.push({ destUrl: `${dest}?n=${n}`, delaySeconds: (n - 1) * STEP_SECONDS });
+      }
+      try {
+        newState.messageIds = await qstashBatch(entries);
+        await setState(newState);
+      } catch (e) {
+        // Programmazione fallita: annullo la sequenza per non lasciare stati zombie
+        await setState({ active: false, sent: 1, total: TOTAL, messageIds: [] });
+        return res.status(502).json({ success: false, error: `Programmazione fallita: ${e.message}` });
+      }
       return res.status(200).json({ success: true, ...pub(newState) });
     }
 

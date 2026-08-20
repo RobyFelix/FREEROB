@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 
-const VERSION = "0.6";
+const VERSION = "0.7";
 
 // Icona nebulizzazione line-art (tasto singolo)
 const IconMist = () => (
@@ -164,7 +164,9 @@ export default function App() {
                 : "1 h profumo - 12 myst"}
             </span>
             {seq.active && (
-              <span style={styles.rectProg}>myst {seq.sent}/{seq.total}</span>
+              <span style={styles.rectProg}>
+                inviati {seq.sent}/{seq.total} — restano {Math.max(seq.total - seq.sent, 0)} myst
+              </span>
             )}
           </span>
         </button>
