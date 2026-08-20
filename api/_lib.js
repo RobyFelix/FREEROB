@@ -3,6 +3,7 @@
 const RURL = process.env.UPSTASH_REDIS_REST_URL;
 const RTOK = process.env.UPSTASH_REDIS_REST_TOKEN;
 const QTOK = process.env.QSTASH_TOKEN;
+const QURL = process.env.QSTASH_URL || "https://qstash.upstash.io";
 
 export function envOk() {
   return Boolean(RURL && RTOK && QTOK);
@@ -41,7 +42,7 @@ export async function setState(state) {
 
 export async function qstashPublish(destUrl, delaySeconds) {
   const r = await fetch(
-    `https://qstash.upstash.io/v2/publish/${encodeURIComponent(destUrl)}`,
+    `${QURL}/v2/publish/${encodeURIComponent(destUrl)}`,
     {
       method: "POST",
       headers: {
@@ -59,7 +60,7 @@ export async function qstashPublish(destUrl, delaySeconds) {
 
 export async function qstashCancel(messageId) {
   try {
-    await fetch(`https://qstash.upstash.io/v2/messages/${messageId}`, {
+    await fetch(`${QURL}/v2/messages/${messageId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${QTOK}` },
     });
