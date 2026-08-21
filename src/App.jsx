@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 
-const VERSION = "2.0";
+const VERSION = "2.1";
 
 // Preset sequenze: etichetta, sottotitolo, numero myst, intervallo (s)
 const PRESETS = [
-  { id: "p1", title: "60 MIN", sub: "5 min/myst", total: 12, step: 300 },
-  { id: "p2", title: "60 MIN", sub: "10 min/myst", total: 6, step: 600 },
-  { id: "p3", title: "30 MIN", sub: "5 min/myst", total: 6, step: 300 },
-  { id: "p4", title: "30 MIN", sub: "10 min/myst", total: 3, step: 600 },
+  { id: "p1", title: "60 MIN FAST", sub: "Myst ogni 5 min", total: 12, step: 300 },
+  { id: "p2", title: "60 MIN SLOW", sub: "Myst ogni 10 min", total: 6, step: 600 },
+  { id: "p3", title: "30 MIN FAST", sub: "Myst ogni 5 min", total: 6, step: 300 },
+  { id: "p4", title: "30 MIN SLOW", sub: "Myst ogni 10 min", total: 3, step: 600 },
 ];
 
 export default function App() {
@@ -162,7 +162,14 @@ export default function App() {
             transition: "box-shadow 0.3s, opacity 0.2s",
           }}
         >
-          {busy ? "Invio..." : "MYST"}
+          {busy ? (
+            "Invio..."
+          ) : (
+            <>
+              <span>MYST</span>
+              <span style={styles.roundSub}>singolo</span>
+            </>
+          )}
         </button>
       </main>
     </div>
@@ -233,6 +240,11 @@ const styles = {
   rectTitle: { fontSize: 20, fontWeight: 700, letterSpacing: 1.5 },
   rectSub: { fontSize: 13, fontWeight: 500, opacity: 0.9 },
   round: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
     border: "none",
     borderRadius: "50%",
     width: 130,
@@ -244,4 +256,5 @@ const styles = {
     letterSpacing: 2,
     cursor: "pointer",
   },
+  roundSub: { fontSize: 12, fontWeight: 500, letterSpacing: 1, opacity: 0.85, textTransform: "none" },
 };
